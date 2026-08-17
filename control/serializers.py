@@ -1,6 +1,7 @@
 
 
-from rest_framework import serializers
+
+from .models import Ticket
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
@@ -53,3 +54,49 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ['id', 'name', 'description', 'is_active', 'created_at']
         read_only_fields = ['id', 'created_at']
+
+
+
+class TicketSerializer(serializers.ModelSerializer):
+    client = serializers.StringRelatedField(read_only=True)
+
+    operator = serializers.SerializerMethodField()
+    category_name = serializers.CharField(
+        source="category.name",
+        read_only=True
+    )
+
+    class Meta:
+        model = Ticket
+        fields = [
+            "id",
+            "title",
+            "description",
+            "client",
+            "operator",
+            "category",
+            "category_name",
+            "status",
+            "priority",
+            "created_at",
+            "updated_at",
+        ]
+
+        read_only_fields = [
+            "id",
+            "client",
+            "operator",
+            "category_name",
+            "status",
+            "created_at",
+            "updated_at",
+        ]
+
+    def get_operator(self, obj):
+        if not obj.operator:
+            return None
+
+        return {
+            "id": obj.operator.id,
+            "username": obj.operator.username,
+        }
