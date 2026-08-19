@@ -1,6 +1,8 @@
 
 from rest_framework import generics, status
+from django.db import transaction
 
+from .tasks import send_urgent_ticket_notification
 from rest_framework.permissions import AllowAny
 from django.contrib.auth import get_user_model
 
@@ -146,10 +148,17 @@ class TicketViewSet(viewsets.ModelViewSet):
         ]
 
     def perform_create(self, serializer):
-        serializer.save(
+        ticket = serializer.save(
             client=self.request.user,
             status=Ticket.StatusChoices.NEW,
         )
+
+        if ticket.priority == Ticket.PriorityChoices.URGENT:
+            transaction.on_commit(
+                lambda: send_urgent_ticket_notification.delay(
+                    ticket.id
+                )
+            )
 
 
 

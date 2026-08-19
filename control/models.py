@@ -46,7 +46,13 @@ class Ticket(models.Model):
     category = models.ForeignKey(Category,on_delete=models.SET_NULL,null=True,related_name='category_tasks')
     status = models.CharField(max_length=20,choices=StatusChoices.choices,default=StatusChoices.NEW,verbose_name='holati')
     priority = models.CharField(max_length=10,choices=PriorityChoices.choices,default=PriorityChoices.MEDIUM,verbose_name='Muhumlik darajasi')
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
 
+    updated_at = models.DateTimeField(
+        auto_now=True
+    )
 
 class Message(models.Model):
     ticket = models.ForeignKey(Ticket,on_delete=models.CASCADE,related_name="message")

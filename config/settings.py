@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/6.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
-
+from celery.schedules import crontab
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'django_filters',
+    "channels",
 ]
 
 MIDDLEWARE = [
@@ -77,22 +78,18 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
+import os
+
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "supporthub",
-        "USER": "postgres",
-        "PASSWORD": "05052005",
-        "HOST": "127.0.0.1",
-        "PORT": "5432",
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'taskdb'),
+        'USER': os.environ.get('DB_USER', 'postgres'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'postgres'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
 
 
 # Password validation
@@ -169,4 +166,47 @@ CACHES = {
         },
         "TIMEOUT": 300,
     }
+}
+
+ASGI_APPLICATION = "config.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [
+                ("127.0.0.1", 6379)
+            ],
+        },
+    },
+}
+
+CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
+
+CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/0"
+
+CELERY_ACCEPT_CONTENT = [
+    "json",
+]
+
+CELERY_TASK_SERIALIZER = "json"
+
+CELERY_RESULT_SERIALIZER = "json"
+
+CELERY_TIMEZONE = "Asia/Tashkent"
+
+EMAIL_BACKEND = (
+    "django.core.mail.backends.console.EmailBackend"
+)
+
+DEFAULT_FROM_EMAIL = "supporthub@example.com"
+
+CELERY_BEAT_SCHEDULE = {
+    "find-old-new-tickets-every-day": {
+        "task": "control.tasks.find_old_new_tickets",
+        "schedule": crontab(
+            hour=0,
+            minute=0,
+        ),
+    },
 }
